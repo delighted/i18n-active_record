@@ -1,4 +1,5 @@
 require_relative './test_helper'
+require 'i18n/backend/active_record/cache'
 
 class I18nBackendActiveRecordTest < I18n::TestCase
   def setup
@@ -108,5 +109,28 @@ class I18nBackendActiveRecordTest < I18n::TestCase
     I18n::Backend::ActiveRecord::Translation.destroy_all
 
     assert_equal "translation missing: en.no key", I18n.t('.')
+  end
+
+  test "supports cached lookups" do
+    I18n::Backend::ActiveRecord::Translation.delete_all
+    I18n.backend.store_translations(:en, :foo => { :bar => 'bar' })
+    I18n.backend.store_translations(:en, :foo => { :baz => 'baz' })
+    cache = I18n::Backend::ActiveRecord::Cache.new
+
+    # with no cache
+    assert_equal 'bar', I18n.t('foo.bar')
+    assert_equal({ bar: 'bar', baz: 'baz' }, I18n.t('foo'))
+    assert_equal 'baz', I18n.t('foo.baz')
+    assert_equal({ :foo => { :bar => 'bar', :baz => 'baz' } }, I18n.t('.'))
+    assert_equal 'translation missing: en.bar', I18n.t('bar')
+
+    # missing, then hitting cache
+    2.times do
+      assert_equal 'bar', I18n.t('foo.bar', cache: cache)
+      assert_equal({ bar: 'bar', baz: 'baz' }, I18n.t('foo', cache: cache))
+      assert_equal 'baz', I18n.t('foo.baz', cache: cache)
+      assert_equal({ :foo => { :bar => 'bar', :baz => 'baz' } }, I18n.t('.', cache: cache))
+      assert_equal 'translation missing: en.bar', I18n.t('bar', cache: cache)
+    end
   end
 end

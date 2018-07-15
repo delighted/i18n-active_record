@@ -56,10 +56,12 @@ module I18n
             key = key[0..-2]
           end
 
-          result = if key == ''
-            Translation.locale(locale).all
+          result = if options[:cache]
+            options[:cache].cached(locale, key, options) do |locale, key|
+              find_translations(locale, key)
+            end
           else
-            Translation.locale(locale).lookup(key)
+            find_translations(locale, key)
           end
 
           if result.empty?
@@ -71,6 +73,14 @@ module I18n
               hash.deep_merge build_translation_hash_by_key(key, translation)
             end
             result.deep_symbolize_keys
+          end
+        end
+
+        def find_translations(locale, key)
+          if key == ''
+            Translation.locale(locale).all.to_a
+          else
+            Translation.locale(locale).lookup(key).to_a
           end
         end
 
