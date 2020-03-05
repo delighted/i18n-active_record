@@ -23,8 +23,13 @@ module I18n
             store[locale][scope] = yield(locale, scope)
           end
 
-          store[locale][scope].select do |translation|
-            translation.key.start_with?(key)
+          if scope == ""
+            store[locale][scope]
+          else
+            store[locale][scope].select do |translation|
+              translation.key == key ||
+              translation.key.start_with?("#{key}#{seperator}")
+            end
           end
         end
       end

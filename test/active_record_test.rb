@@ -115,22 +115,27 @@ class I18nBackendActiveRecordTest < I18n::TestCase
     I18n::Backend::ActiveRecord::Translation.delete_all
     I18n.backend.store_translations(:en, :foo => { :bar => 'bar' })
     I18n.backend.store_translations(:en, :foo => { :baz => 'baz' })
+    I18n.backend.store_translations(:en, :foo => { :gyp_sum => 'gyp_sum' })
     cache = I18n::Backend::ActiveRecord::Cache.new
 
     # with no cache
     assert_equal 'bar', I18n.t('foo.bar')
-    assert_equal({ bar: 'bar', baz: 'baz' }, I18n.t('foo'))
+    assert_equal({ bar: 'bar', baz: 'baz', :gyp_sum => 'gyp_sum' }, I18n.t('foo'))
     assert_equal 'baz', I18n.t('foo.baz')
-    assert_equal({ :foo => { :bar => 'bar', :baz => 'baz' } }, I18n.t('.'))
+    assert_equal 'gyp_sum', I18n.t('foo.gyp_sum')
+    assert_equal({ :foo => { :bar => 'bar', :baz => 'baz', :gyp_sum => 'gyp_sum' } }, I18n.t('.'))
     assert_equal 'translation missing: en.bar', I18n.t('bar')
+    assert_equal 'translation missing: en.foo.gyp', I18n.t('foo.gyp')
 
     # missing, then hitting cache
     2.times do
       assert_equal 'bar', I18n.t('foo.bar', cache: cache)
-      assert_equal({ bar: 'bar', baz: 'baz' }, I18n.t('foo', cache: cache))
+      assert_equal({ bar: 'bar', baz: 'baz', :gyp_sum => 'gyp_sum' }, I18n.t('foo', cache: cache))
       assert_equal 'baz', I18n.t('foo.baz', cache: cache)
-      assert_equal({ :foo => { :bar => 'bar', :baz => 'baz' } }, I18n.t('.', cache: cache))
+      assert_equal 'gyp_sum', I18n.t('foo.gyp_sum', cache: cache)
+      assert_equal({ :foo => { :bar => 'bar', :baz => 'baz', :gyp_sum => 'gyp_sum' } }, I18n.t('.', cache: cache))
       assert_equal 'translation missing: en.bar', I18n.t('bar', cache: cache)
+      assert_equal 'translation missing: en.foo.gyp', I18n.t('foo.gyp', cache: cache)
     end
   end
 end
